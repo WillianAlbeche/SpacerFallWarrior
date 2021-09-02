@@ -24,20 +24,20 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     override func didMove(to view: SKView) {
         physicsWorld.contactDelegate = self
         createMainCaracter()
-//        if motionManager.isAccelerometerAvailable {
-//                    // 2
-//                    motionManager.accelerometerUpdateInterval = 0.01
-//                    motionManager.startAccelerometerUpdates(to: .main) {
-//                        (data, error) in
-//                        guard let data = data, error == nil else {
-//                            return
-//                        }
-//
-//                        // 3
-//                        let currentX = self.player.position.x
-//                        self.destX = currentX + CGFloat(data.acceleration.x * 500)
-//                    }
-//                }
+        if motionManager.isAccelerometerAvailable {
+                    // 2
+                    motionManager.accelerometerUpdateInterval = 0.01
+                    motionManager.startAccelerometerUpdates(to: .main) {
+                        (data, error) in
+                        guard let data = data, error == nil else {
+                            return
+                        }
+
+                        // 3
+                        let currentX = self.player.position.x
+                        self.destX = currentX + CGFloat(data.acceleration.x * 500)
+                    }
+                }
         
         
         var enemyTimeSpawn = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: Selector("createEnemyCaracter"), userInfo: nil, repeats: true)
@@ -135,7 +135,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     override func update(_ currentTime: TimeInterval) {
         // Called before each frame is rendered
-//        let action = SKAction.moveTo(x: destX, duration: 1)
-//                player.run(action)
+        let action = SKAction.moveTo(x: destX, duration: 1)
+                player.run(action)
     }
 }
