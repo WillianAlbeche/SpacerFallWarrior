@@ -7,53 +7,66 @@
 
 import SpriteKit
 import GameplayKit
-import CoreMotion
+//import CoreMotion
+
+struct PhysicsCategory {
+    static let enemy: UInt32 = 1
+    static let bullet: UInt32 = 2
+    static let player: UInt32 = 3
+}
 
 class GameScene: SKScene, SKPhysicsContactDelegate {
     
-    struct PhysicsCategory {
-        static let enemy: UInt32 = 1
-        static let bullet: UInt32 = 2
-        static let player: UInt32 = 3
-    }
-    
+    var score:Int = 0
     var player = SKSpriteNode()
-    var motionManager = CMMotionManager()
-    var destX: CGFloat  = 0.0
+    var scoreLabel = UILabel()
+
     
     override func didMove(to view: SKView) {
+        
         physicsWorld.contactDelegate = self
+        
         createMainCaracter()
-//        if motionManager.isAccelerometerAvailable {
-//                    // 2
-//                    motionManager.accelerometerUpdateInterval = 0.01
-//                    motionManager.startAccelerometerUpdates(to: .main) {
-//                        (data, error) in
-//                        guard let data = data, error == nil else {
-//                            return
-//                        }
-//
-//                        // 3
-//                        let currentX = self.player.position.x
-//                        self.destX = currentX + CGFloat(data.acceleration.x * 500)
-//                    }
-//                }
-        
-        
-        var enemyTimeSpawn = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: Selector("createEnemyCaracter"), userInfo: nil, repeats: true)
+        var enemyTimeSpawn = Timer.scheduledTimer(timeInterval: 0.8, target: self, selector: Selector("createEnemyCaracter"), userInfo: nil, repeats: true)
         var bulletsTimeSpawn = Timer.scheduledTimer(timeInterval: 0.2, target: self, selector: Selector("spawnBullets"), userInfo: nil, repeats: true)
         
        
         
     }
 
-//    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-//        for touch in touches{
-//            let location = touch.location(in: self)
-//            player.run(SKAction.moveTo(x: location.x, duration: 0))
-//        }
-//    }
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        for touch in touches{
+            let location = touch.location(in: self)
+            player.run(SKAction.moveTo(x: location.x, duration: 0))
+        }
+         
+    }
     
+    
+    func didBegin(_ contact: SKPhysicsContact) {
+       //NSLog("hello", contact)
+        var firstContact: SKPhysicsBody = contact.bodyA
+        var secondContact:SKPhysicsBody = contact.bodyB
+        // MARK: - TAVA DEBBUGANDO, SEM JULGAMENTOS
+        //print("First: \(firstContact.categoryBitMask)")
+        //print("second: \(secondContact.categoryBitMask)")
+        if((firstContact.categoryBitMask == PhysicsCategory.enemy) && (secondContact.categoryBitMask ==  PhysicsCategory.bullet) || (firstContact.categoryBitMask == PhysicsCategory.bullet) && (secondContact.categoryBitMask ==  PhysicsCategory.enemy) ){
+            collisionCheckerBullet(enemy: firstContact.node as! SKSpriteNode, bullet: secondContact.node as! SKSpriteNode)
+        }
+        
+        
+    }
+    
+    func collisionCheckerBullet(enemy:SKSpriteNode,  bullet:SKSpriteNode){
+        //print("hello")
+        enemy.removeFromParent()
+        bullet.removeFromParent()
+        score += 1
+        
+        scoreLabel.text = "\(score)"
+    }
+    
+     
     // MARK: - Player
     func createMainCaracter(){
         player = SKSpriteNode(imageNamed: "MainCaracter")
@@ -68,9 +81,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         player.physicsBody?.contactTestBitMask = PhysicsCategory.enemy
         player.physicsBody?.isDynamic = false
         
-        
-        
         addChild(player)
+        
+        scoreLabel =  UILabel(frame: CGRect(x: 0, y: 30, width: ((self.frame.size.height) / 2) , height: 40))
+        scoreLabel.backgroundColor = UIColor(red: 0.1, green: 0.1, blue: 0.1, alpha: 3)
+        scoreLabel.textColor = UIColor.white
+        scoreLabel.textAlignment = .center
+        
+        
+        self.view?.addSubview(scoreLabel)
     }
     
     // MARK: - Enemy
@@ -92,7 +111,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         //let actionKill =  SKAction.removeFromParent()
         
         // MARK: - Actions
-        let moveDown = SKAction.moveTo(y: -(self.frame.size.height / 2), duration: 4)
+        let moveDown = SKAction.moveTo(y: -(self.frame.size.height / 2), duration: 2)
         enemy.run(moveDown) {
             enemy.removeFromParent()
         }
@@ -118,6 +137,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         bullet.physicsBody?.contactTestBitMask = PhysicsCategory.enemy
         bullet.physicsBody?.affectedByGravity = false
         bullet.physicsBody?.isDynamic = false
+        bullet.physicsBody?.restitution = 0.4
+        //bullet.physicsBody?.contactTestBitMask = bullet.physicsBody?.collisionBitMask ?? 0
         
         // MARK: - Actions
         let outOfScreen = SKAction.removeFromParent()
@@ -132,10 +153,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     
     
+    
+    
+    
 
     override func update(_ currentTime: TimeInterval) {
         // Called before each frame is rendered
 //        let action = SKAction.moveTo(x: destX, duration: 1)
 //                player.run(action)
+        
     }
 }
