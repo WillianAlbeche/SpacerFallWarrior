@@ -17,9 +17,21 @@ struct PhysicsCategory {
 
 class GameScene: SKScene, SKPhysicsContactDelegate {
     
-    var score:Int = 0
+    var score = 0 {
+        didSet {
+            scoreLabel.text = "Score: \(score)"
+        }
+    }
+    var lifes = 4 {
+        didSet{
+            lifeLabel.text = "Lifes: \(lifes)"
+        }
+       
+    }
+    var lifeLabel = SKLabelNode()
+    
     var player = SKSpriteNode()
-    var scoreLabel = UILabel()
+    var scoreLabel = SKLabelNode()
 
     
     override func didMove(to view: SKView) {
@@ -27,10 +39,20 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         physicsWorld.contactDelegate = self
         
         createMainCaracter()
-        var enemyTimeSpawn = Timer.scheduledTimer(timeInterval: 0.8, target: self, selector: Selector("createEnemyCaracter"), userInfo: nil, repeats: true)
+        var enemyTimeSpawn = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: Selector("createEnemyCaracter"), userInfo: nil, repeats: true)
         var bulletsTimeSpawn = Timer.scheduledTimer(timeInterval: 0.2, target: self, selector: Selector("spawnBullets"), userInfo: nil, repeats: true)
         
-       
+        scoreLabel = SKLabelNode()
+        scoreLabel.text = "Score: \(score)"
+        scoreLabel.position = CGPoint(x: 300, y: 500)
+        scoreLabel.horizontalAlignmentMode = .right
+        addChild(scoreLabel)
+        
+        lifeLabel =  SKLabelNode()
+        lifeLabel.text = "Lifes: \(lifes)"
+        lifeLabel.position = CGPoint(x: -300, y: 500)
+        lifeLabel.horizontalAlignmentMode = .left
+        addChild(lifeLabel)
         
     }
 
@@ -45,25 +67,36 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     func didBegin(_ contact: SKPhysicsContact) {
        //NSLog("hello", contact)
+        
         var firstContact: SKPhysicsBody = contact.bodyA
         var secondContact:SKPhysicsBody = contact.bodyB
         // MARK: - TAVA DEBBUGANDO, SEM JULGAMENTOS
         //print("First: \(firstContact.categoryBitMask)")
         //print("second: \(secondContact.categoryBitMask)")
+        
         if((firstContact.categoryBitMask == PhysicsCategory.enemy) && (secondContact.categoryBitMask ==  PhysicsCategory.bullet) || (firstContact.categoryBitMask == PhysicsCategory.bullet) && (secondContact.categoryBitMask ==  PhysicsCategory.enemy) ){
             collisionCheckerBullet(enemy: firstContact.node as! SKSpriteNode, bullet: secondContact.node as! SKSpriteNode)
+            score += 1
         }
-        
-        
+        else if(firstContact.categoryBitMask == PhysicsCategory.player) && (secondContact.categoryBitMask ==  PhysicsCategory.enemy) || (firstContact.categoryBitMask == PhysicsCategory.enemy) && (secondContact.categoryBitMask ==  PhysicsCategory.player){
+            collisionCheckerPlayer(player: firstContact.node as! SKSpriteNode, enemy: secondContact.node as! SKSpriteNode)
+            if(lifes == 0){
+                player.removeFromParent()
+            }
+            else{
+                lifes -= 1
+            }
+            
+        }
     }
     
     func collisionCheckerBullet(enemy:SKSpriteNode,  bullet:SKSpriteNode){
-        //print("hello")
         enemy.removeFromParent()
         bullet.removeFromParent()
-        score += 1
+    }
+    func collisionCheckerPlayer(player: SKSpriteNode, enemy:SKSpriteNode){
+        enemy.removeFromParent()
         
-        scoreLabel.text = "\(score)"
     }
     
      
@@ -83,13 +116,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         addChild(player)
         
-        scoreLabel =  UILabel(frame: CGRect(x: 0, y: 30, width: ((self.frame.size.height) / 2) , height: 40))
-        scoreLabel.backgroundColor = UIColor(red: 0.1, green: 0.1, blue: 0.1, alpha: 3)
-        scoreLabel.textColor = UIColor.white
-        scoreLabel.textAlignment = .center
         
-        
-        self.view?.addSubview(scoreLabel)
     }
     
     // MARK: - Enemy
@@ -98,7 +125,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         enemy.name = "enemy"
         // MARK: - Position
         let xPos = randomBeweenNumbers(firstNumber: 0, secondNumber: frame.width)
-        enemy.position = CGPoint(x: xPos - 500, y: self.frame.size.height / 2)
+        enemy.position = CGPoint(x: xPos - 500 , y: self.frame.size.height / 2)
         enemy.zPosition = 1
         
         // MARK: - Physics of enemy
@@ -138,23 +165,39 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         bullet.physicsBody?.affectedByGravity = false
         bullet.physicsBody?.isDynamic = false
         bullet.physicsBody?.restitution = 0.4
-        //bullet.physicsBody?.contactTestBitMask = bullet.physicsBody?.collisionBitMask ?? 0
         
         // MARK: - Actions
-        let outOfScreen = SKAction.removeFromParent()
+        //let outOfScreen = SKAction.removeFromParent()
         let fire = SKAction.moveTo(y: self.size.height + 30, duration: 1)
-//        bullet.run(SKAction.repeatForever(fire))
-//        bullet.run(SKAction.sequence([fire, outOfScreen]))
         bullet.run(fire) {
             bullet.removeFromParent()
         }
         addChild(bullet)
     }
-    
-    
-    
-    
-    
+//    @objc func spawnEnemyBullets(){
+//        let bullet = SKSpriteNode(imageNamed: "Bullet")
+//        bullet.name = "bullet"
+//
+//        // MARK: - Position
+//        bullet.zPosition = -5
+//        bullet.position = CGPoint(x: enemy.position.x, y: enemy.position.y)
+//
+//        // MARK: - Physics of bullets
+//        bullet.physicsBody = SKPhysicsBody(rectangleOf: bullet.size)
+//        bullet.physicsBody?.categoryBitMask = PhysicsCategory.bullet
+//        bullet.physicsBody?.contactTestBitMask = PhysicsCategory.player
+//        bullet.physicsBody?.affectedByGravity = false
+//        bullet.physicsBody?.isDynamic = false
+//        bullet.physicsBody?.restitution = 0.4
+//
+//        // MARK: - Actions
+//        let outOfScreen = SKAction.removeFromParent()
+//        let fire = SKAction.moveTo(y: self.size.height + 30, duration: 1)
+//        bullet.run(fire) {
+//            bullet.removeFromParent()
+//        }
+//        addChild(bullet)
+//    }
     
 
     override func update(_ currentTime: TimeInterval) {
